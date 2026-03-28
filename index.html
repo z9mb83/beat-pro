@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Beat Pro — Lyrics to Beat Generator</title>
+  <meta name="description" content="Paste your lyrics, choose a genre, and instantly get personalized instrument &amp; beat recommendations. Export your beat directly to LMMS." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Animated Background -->
+  <div class="bg-orbs" aria-hidden="true">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <div class="app">
+
+    <!-- ── Header ── -->
+    <header>
+      <div class="logo">
+        <div class="logo-icon">🎛️</div>
+        <span class="logo-text">Beat Pro</span>
+      </div>
+      <p>Paste your lyrics, choose a genre — get instrument recommendations &amp; an export-ready LMMS beat in seconds.</p>
+    </header>
+
+    <!-- ── Input Panel ── -->
+    <section class="panel" id="input-section">
+      <div class="panel-title">Your Lyrics &amp; Genre</div>
+      <div class="input-grid">
+
+        <!-- Lyrics & Mood -->
+        <div class="input-stack">
+          <div>
+            <label for="lyrics-input">Song Lyrics</label>
+            <textarea
+              id="lyrics-input"
+              placeholder="Paste or type your lyrics here…&#10;&#10;E.g.: In the fire I run, no fear in my heart…&#10;&#10;Tip: Ctrl + Enter to analyze"
+              spellcheck="false"
+            ></textarea>
+          </div>
+          <div style="margin-top: 16px;">
+            <label for="mood-input">Mood Prompt (Optional)</label>
+            <textarea
+              id="mood-input"
+              placeholder="Describe the vibe… e.g. Dark, heavy, mysterious, or sunny beach party vibes."
+              style="min-height: 80px;"
+              spellcheck="false"
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- Side controls -->
+        <div class="side-controls">
+          <div>
+            <label for="genre-select">Genre</label>
+            <select id="genre-select">
+              <optgroup label="Standard">
+                <option value="Hip-Hop">🎤 Hip-Hop</option>
+                <option value="Pop" selected>🎵 Pop</option>
+                <option value="Rock">🎸 Rock</option>
+                <option value="Jazz">🎷 Jazz</option>
+                <option value="EDM">⚡ EDM</option>
+                <option value="R&B">🎼 R&B</option>
+                <option value="Country">🤠 Country</option>
+                <option value="Classical">🎻 Classical</option>
+              </optgroup>
+              <optgroup label="Fusion & Exotic">
+                <option value="Indian Classical">🪕 Indian Classical</option>
+                <option value="Goa Trance">🕉️ Goa Trance</option>
+                <option value="Sitar Fusion">✨ Sitar Fusion</option>
+                <option value="Middle Eastern">🕌 Middle Eastern</option>
+                <option value="Flamenco-Trap">💃 Flamenco-Trap</option>
+              </optgroup>
+            </select>
+          </div>
+
+          <button class="btn-analyze" id="analyze-btn" type="button">
+            ✦ Analyze Lyrics
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ── Results (hidden until analyzed) ── -->
+    <div id="results-section" class="hidden">
+
+      <!-- Mood Panel -->
+      <section class="panel">
+        <div class="panel-title">Detected Mood</div>
+        <div id="mood-tags" class="mood-tags"></div>
+      </section>
+
+      <!-- Instruments Panel -->
+      <section class="panel">
+        <div class="panel-title">Recommended Instruments</div>
+        <div id="instruments-grid" class="instruments-grid"></div>
+      </section>
+
+      <!-- Sequencer Panel -->
+      <section class="panel">
+        <div class="panel-title">Beat Step Sequencer <span style="font-weight:400;color:var(--text-muted);margin-left:8px;font-size:12px;">click any cell to toggle</span></div>
+        <div class="sequencer-wrap" id="sequencer-wrap"></div>
+      </section>
+
+      <!-- Controls Panel -->
+      <section class="panel">
+        <div class="panel-title">Playback &amp; Export</div>
+        <div class="controls-bar">
+
+          <!-- BPM -->
+          <div class="bpm-group">
+            <span class="bpm-label">BPM</span>
+            <span class="bpm-value" id="bpm-value">120</span>
+            <input
+              type="range"
+              id="bpm-slider"
+              min="60" max="200" value="120"
+              aria-label="BPM"
+            />
+          </div>
+
+          <!-- Buttons -->
+          <div class="btn-group">
+            <button class="btn btn-play" id="play-btn" disabled type="button">
+              ▶ Play Beat
+            </button>
+            <button class="btn btn-export" id="export-btn" disabled type="button">
+              ⬇ Export to LMMS
+            </button>
+            <button class="btn btn-export" id="export-midi-btn" disabled type="button" style="background: linear-gradient(135deg, #3b82f6, #06b6d4); box-shadow: 0 4px 16px rgba(59,130,246,0.3);">
+              🎹 Export to MIDI
+            </button>
+          </div>
+
+        </div>
+      </section>
+
+    </div><!-- /results-section -->
+
+  </div><!-- /app -->
+
+  <!-- Toast notification -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- Scripts -->
+  <script src="midi-export.js"></script>
+  <script src="lmms-export.js"></script>
+  <script src="app.js"></script>
+
+</body>
+</html>

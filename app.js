@@ -6,40 +6,53 @@
 // ============================================================
 // 1. LYRICS ANALYZER
 // ============================================================
-const LyricsAnalyzer = (() => {
+const LyricsAnalyzer = (function() {
   const MOOD_WORDS = {
-    energy:   ['run','fire','fast','jump','rush','power','alive','loud','rise','fight','wild','free','go','burst','race','fly','hype','lit','bang','spark','electric','charge','explode','force','sprint','adrenaline','hustle','grind', 'shakti', 'josh', 'tez', 'correr', 'fuego', 'rapido', 'fuerza', 'energia', 'vite'],
-    dark:     ['dark','shadow','night','pain','cry','lost','empty','alone','fear','cold','rain','storm','black','silent','void','hollow','broken','numb','grief','tear','shatter','ghost','forgotten','fade','absence','sorrow','ache','dread', 'andhera', 'raat', 'dard', 'akelapan', 'oscuridad', 'noche', 'dolor', 'solo', 'ombre', 'nuit'],
-    romantic: ['love','heart','kiss','hold','touch','you','together','forever','dream','soft','warm','soul','dear','adore','embrace','close','feel','tender','beauty','glow','shine','sweet','honey','darling','beloved', 'pyaar', 'dil', 'ishq', 'mohabbat', 'sanam', 'amor', 'corazon', 'beso', 'amour', 'coeur'],
-    aggro:    ['hate','kill','destroy','crush','war','battle','enemy','smash','rage','anger','fist','blood','brutal','savage','beast','wreck','violate','dominate','conquer', 'nafrat', 'jung', 'khoon', 'gussa', 'odio', 'guerra', 'sangre', 'haine', 'guerre', 'sang'],
-    chill:    ['relax','chill','slow','breathe','flow','calm','peace','smooth','ease','float','gentle','drift','mellow','still','quiet','sunset','horizon','serene','tranquil','rest', 'shanti', 'sukoon', 'dheere', 'paz', 'tranquilo', 'calma', 'paix', 'tranquille'],
-    happy:    ['happy','joy','smile','laugh','celebrate','good','great','amazing','wonderful','sunshine','bright','best','cheer','party','fun','dance','glee','bliss','elated','woo','yay','fantastic', 'khushi', 'muskurana', 'jashn', 'achha', 'feliz', 'alegria', 'fiesta', 'heureux', 'joie', 'fête'],
+    energy:   ['run','fire','fast','jump','rush','power','alive','loud','rise','fight','wild','free','go','burst','race','fly','hype','lit','bang','spark','electric','charge','explode','force','sprint','adrenaline','hustle','grind'],
+    dark:     ['dark','shadow','night','pain','cry','lost','empty','alone','fear','cold','rain','storm','black','silent','void','hollow','broken','numb','grief','tear','shatter','ghost','forgotten','fade','absence','sorrow','ache','dread'],
+    romantic: ['love','heart','kiss','hold','touch','you','together','forever','dream','soft','warm','soul','dear','adore','embrace','close','feel','tender','beauty','glow','shine','sweet','honey','darling','beloved'],
+    aggro:    ['hate','kill','destroy','crush','war','battle','enemy','smash','rage','anger','fist','blood','brutal','savage','beast','wreck','violate','dominate','conquer'],
+    chill:    ['relax','chill','slow','breathe','flow','calm','peace','smooth','ease','float','gentle','drift','mellow','still','quiet','sunset','horizon','serene','tranquil','rest'],
+    happy:    ['happy','joy','smile','laugh','celebrate','good','great','amazing','wonderful','sunshine','bright','best','cheer','party','fun','dance','glee','bliss','elated','woo','yay','fantastic'],
   };
 
-  function analyze(text) {
-    const words = text.toLowerCase().match(/\b\w+\b/g) || [];
-    const total = Math.max(words.length, 1);
-    const scores = {};
+  const INSTRUMENTS_LIST = [
+    'Violin', 'Cello', 'Saxophone', 'Trumpet', 'Flute', 'Ney',
+    'Sitar', 'Tabla', 'Tanpura', 'Oud', 'Darbuka',
+    '808 Kick', '808 Snare', 'Open Hi-Hat', 'Hi-Hat', 'Clap',
+    'Synth Lead', 'Acid Lead', 'Synth Bass', 'Psy-Bass', 'Pad',
+    'Piano', 'Keys', 'Electric Guitar', 'Acoustic Guitar',
+    'Vibraphone', 'Marimba', 'Congas', 'Bongos'
+  ];
 
+  function analyze(text) {
+    if (!text) return { scores: {}, tags: ['chill'] };
+    const words = text.toLowerCase().match(/\b\w+\b/g) || [];
+    const total = words.length || 1;
+    const scores = {};
     for (const [mood, kws] of Object.entries(MOOD_WORDS)) {
       const hits = words.filter(w => kws.includes(w)).length;
       scores[mood] = Math.min(1, (hits / total) * 30 + (hits > 0 ? 0.12 : 0));
     }
-
-    // Normalise so max == 1
     const maxScore = Math.max(...Object.values(scores), 0.01);
     for (const k in scores) scores[k] /= maxScore;
-
-    // Dominant mood tags (threshold > 0.3)
-    const tags = Object.entries(scores)
-      .filter(([, v]) => v > 0.25)
-      .sort((a, b) => b[1] - a[1])
-      .map(([k]) => k);
-
+    const tags = Object.entries(scores).filter(([, v]) => v > 0.25).sort((a,b) => b[1]-a[1]).map(([k])=>k);
     return { scores, tags: tags.length ? tags : ['chill'] };
   }
 
-  return { analyze };
+  function scanForInstruments(text) {
+    if (!text) return [];
+    const t = text.toLowerCase();
+    const detected = INSTRUMENTS_LIST.filter(inst => {
+      const name = inst.toLowerCase();
+      const first = name.split(' ')[0];
+      return t.includes(name) || t.includes(first);
+    });
+    console.log('Scanner found instruments:', detected);
+    return detected;
+  }
+
+  return { analyze, scanForInstruments };
 })();
 
 // ============================================================
@@ -132,33 +145,75 @@ const InstrumentRecommender = (() => {
       { name:'Bass',          icon:'🎸', desc:'Supporting low-end' },
     ],
     'Flamenco-Trap': [
-      { name:'Acoustic Guitar',icon:'🎸',desc:'Strummed flamenco guitar' },
+      { name:'Acoustic Guitar',icon:'💃',desc:'Strummed flamenco guitar' },
       { name:'808 Kick',      icon:'🥁', desc:'Hard trap kick' },
       { name:'Clap',          icon:'🪘', desc:'Snappy percussion claps' },
       { name:'Castanets',     icon:'🎵', desc:'Traditional rhythmic clacks' },
-      { name:'Bass',          icon:'🎸', desc:'Heavy sub-bass' },
+      { name:'808 Snare',     icon:'🥁', desc:'Sharp trap snare' },
     ],
+  };
+
+  // List of all possible instruments for "Specific Instrument" requests
+  const ALL_INSTRUMENTS = {
+    'Violin':         { name:'Violin',        icon:'🎻', desc:'Classical lead violin' },
+    'Cello':          { name:'Cello',         icon:'🎻', desc:'Deep orchestral cello' },
+    'Saxophone':      { name:'Saxophone',     icon:'🎷', desc:'Soulful lead sax' },
+    'Trumpet':        { name:'Trumpet',       icon:'🎺', desc:'Bright brass trumpet' },
+    'Flute':          { name:'Flute',         icon:'🪈', desc:'Melodic flute' },
+    'Ney':            { name:'Ney',           icon:'🪈', desc:'Breath Middle Eastern flute' },
+    'Sitar':          { name:'Sitar',         icon:'🪕', desc:'Indian sitar' },
+    'Tabla':          { name:'Tabla',         icon:'🥁', desc:'Complex Indian hand drums' },
+    'Tanpura':        { name:'Tanpura',       icon:'🎵', desc:'Harmonic drone' },
+    'Oud':            { name:'Oud',           icon:'🪕', desc:'Arabic lute' },
+    'Darbuka':        { name:'Darbuka',       icon:'🥁', desc:'Goblet drum' },
+    '808 Kick':       { name:'808 Kick',      icon:'🥁', desc:'Deep trap kick' },
+    '808 Snare':      { name:'808 Snare',     icon:'🥁', desc:'Sharp trap snare' },
+    'Open Hi-Hat':    { name:'Open Hi-Hat',   icon:'🎵', desc:'Crisp open hi-hat' },
+    'Hi-Hat':         { name:'Hi-Hat',        icon:'🎵', desc:'Steady hi-hat' },
+    'Clap':           { name:'Clap',          icon:'🪘', desc:'Percussive clap' },
+    'Synth Lead':     { name:'Synth Lead',    icon:'🎹', desc:'Electronic lead melody' },
+    'Acid Lead':      { name:'Acid Lead',     icon:'⌨️', desc:'Resonant acid synth' },
+    'Synth Bass':     { name:'Synth Bass',    icon:'🎸', desc:'Groovy synth bass' },
+    'Psy-Bass':       { name:'Psy-Bass',      icon:'🎸', desc:'Rolling 16th bass' },
+    'Pad':            { name:'Pad',           icon:'🎹', desc:'Atmospheric pad' },
+    'Piano':          { name:'Piano',         icon:'🎹', desc:'Grand piano' },
+    'Keys':           { name:'Keys',          icon:'🎹', desc:'Electric keys' },
+    'Electric Guitar':{ name:'Electric Guitar',icon:'🎸',desc:'Rocking guitar riff' },
+    'Acoustic Guitar':{ name:'Acoustic Guitar',icon:'🎸',desc:'Strummed acoustic' },
+    'Vibraphone':     { name:'Vibraphone',    icon:'✨', desc:'Mellow metallic percussion' },
+    'Marimba':        { name:'Marimba',       icon:'🪵', desc:'Warm wooden percussion' },
+    'Congas':         { name:'Congas',        icon:'🥁', desc:'Afro-Cuban drums' },
+    'Bongos':         { name:'Bongos',        icon:'🥁', desc:'High-pitched hand drums' },
   };
 
   // Mood boosts: which moods up-rank which instruments
   const MOOD_BOOSTS = {
-    energy:   ['Kick','808 Kick','Hi-Hat','Electric Guitar','Synth Lead','Clap'],
-    dark:     ['Bass','808 Kick','Pad','Strings','Cello'],
-    romantic: ['Piano','Keys','Strings','Flute','Acoustic Guitar'],
-    aggro:    ['Kick','808 Kick','Snare','Electric Guitar','Bass'],
-    chill:    ['Pad','Keys','Piano','Acoustic Guitar','Strings'],
-    happy:    ['Clap','Synth Lead','Piano','Hi-Hat','Fiddle'],
+    energy:   ['Kick','808 Kick','Hi-Hat','Electric Guitar','Synth Lead','Clap','Acid Lead','Open Hi-Hat'],
+    dark:     ['Bass','808 Kick','Pad','Strings','Cello','Synth Bass','Psy-Bass'],
+    romantic: ['Piano','Keys','Strings','Flute','Acoustic Guitar','Violin','Saxophone'],
+    aggro:    ['Kick','808 Kick','Snare','Electric Guitar','Bass','808 Snare'],
+    chill:    ['Pad','Keys','Piano','Acoustic Guitar','Strings','Flute','Vibraphone'],
+    happy:    ['Clap','Synth Lead','Piano','Hi-Hat','Fiddle','Bongos','Marimba'],
   };
 
-  function recommend(genre, moodScores) {
-    const base = GENRE_INSTRUMENTS[genre] || GENRE_INSTRUMENTS['Pop'];
+  function recommend(genre, moodScores, requestedInstruments = []) {
+    let base = [...(GENRE_INSTRUMENTS[genre] || GENRE_INSTRUMENTS['Pop'])];
+
+    // Add requested instruments from the prompt
+    requestedInstruments.forEach(ri => {
+      const data = ALL_INSTRUMENTS[ri];
+      if (data && !base.find(b => b.name === ri)) {
+        base.unshift({ ...data, isForced: true });
+      }
+    });
 
     return base.map(inst => {
       let boost = 0;
       for (const [mood, score] of Object.entries(moodScores)) {
         if (MOOD_BOOSTS[mood]?.includes(inst.name)) boost += score * 0.35;
       }
-      const score = Math.min(1, 0.55 + boost + Math.random() * 0.1);
+      // Forced instruments get a score > 1 to stay on top
+      const score = inst.isForced ? 1.5 : Math.min(1, 0.55 + boost + Math.random() * 0.1);
       return { ...inst, score };
     }).sort((a, b) => b.score - a.score);
   }
@@ -204,6 +259,15 @@ const BeatPatternGenerator = (() => {
     'Psy-Bass':      [1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1],
     'Tanpura':       [1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
     'Ney':           [0,0,1,0, 1,0,0,0, 1,0,1,0, 0,0,1,0],
+    '808 Snare':     [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,1],
+    'Open Hi-Hat':   [0,0,1,0, 0,0,1,0, 0,0,1,0, 0,0,1,0],
+    'Synth Bass':    [1,0,0,1, 1,0,0,0, 1,0,1,0, 0,1,0,0],
+    'Violin':        [1,0,1,0, 0,1,0,0, 1,0,1,0, 0,0,1,0],
+    'Saxophone':     [0,1,0,0, 1,0,0,1, 0,1,0,0, 1,0,1,0],
+    'Vibraphone':    [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0],
+    'Marimba':       [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0],
+    'Congas':        [1,0,0,1, 0,1,0,0, 1,0,0,1, 0,1,0,0],
+    'Bongos':        [1,1,0,1, 1,1,0,1, 1,1,0,1, 1,1,0,1],
   };
 
   const BPM_MAP = {
@@ -383,12 +447,12 @@ const AudioEngine = (() => {
     else if (n.includes('snare')|| n.includes('brush')) playSnare(time, ac);
     else if (n.includes('open hi-hat')) playHiHat(time, ac, true);
     else if (n.includes('hi-hat'))     playHiHat(time, ac, false);
-    else if (n.includes('clap') || n.includes('darbuka')) playClap(time, ac);
+    else if (n.includes('clap') || n.includes('darbuka') || n.includes('conga') || n.includes('bongo')) playClap(time, ac);
     else if (n.includes('ride') || n.includes('castanets')) playHiHat(time, ac, true);
-    else if (n.includes('bass') || n.includes('cello') || n.includes('double') || n.includes('tabla')) playBass(time, ac, n.includes('808') ? 50 : 80);
-    else if (n.includes('synth') || n.includes('lead') || n.includes('trumpet') || n.includes('flute') || n.includes('oboe') || n.includes('fiddle') || n.includes('sitar') || n.includes('oud') || n.includes('ney')) playSynth(time, ac, n.includes('sitar') ? 550 : 440);
+    else if (n.includes('bass') || n.includes('cello') || n.includes('double') || n.includes('tabla')) playBass(time, ac, n.includes('808') || n.includes('synth') ? 50 : 80);
+    else if (n.includes('synth') || n.includes('lead') || n.includes('trumpet') || n.includes('flute') || n.includes('oboe') || n.includes('fiddle') || n.includes('sitar') || n.includes('oud') || n.includes('ney') || n.includes('sax') || n.includes('violin')) playSynth(time, ac, n.includes('sitar') ? 550 : 440);
     else if (n.includes('pad') || n.includes('strings') || n.includes('tanpura')) playPad(time, ac);
-    else if (n.includes('piano') || n.includes('keys') || n.includes('guitar') || n.includes('acoustic')) playGeneric(time, ac, 262);
+    else if (n.includes('piano') || n.includes('keys') || n.includes('guitar') || n.includes('acoustic') || n.includes('vibraphone') || n.includes('marimba')) playGeneric(time, ac, 262);
     else playGeneric(time, ac, 330);
   }
 
@@ -553,6 +617,15 @@ const UIController = (() => {
 
     if (!lyrics && !moodInput) { showToast('Please enter lyrics or a mood description'); return; }
 
+    // Stop playback if already running to keep sound in sync with new generation
+    if (AudioEngine.isPlaying()) {
+      AudioEngine.stop();
+      playBtn().innerHTML = '▶ Play Beat';
+      playBtn().classList.remove('playing');
+      document.querySelectorAll('.current-beat').forEach(el => el.classList.remove('current-beat'));
+      lastHighlightedStep = -1;
+    }
+
     const combinedText = lyrics + ' ' + moodInput;
     const btn = analyzeBtn();
     btn.disabled = true;
@@ -561,19 +634,25 @@ const UIController = (() => {
     // Simulate slight async for animation
     setTimeout(() => {
       const moodResult = LyricsAnalyzer.analyze(combinedText);
+      const requestedInstruments = LyricsAnalyzer.scanForInstruments(combinedText);
+      
+      console.log('Analysis Debug:', { combinedText, moodResult, requestedInstruments });
+
       currentMoodResult = moodResult;
       currentGenre = genre;
 
-      const instruments = InstrumentRecommender.recommend(genre, moodResult.scores);
-      currentInstruments = instruments;
+      const recInstruments = InstrumentRecommender.recommend(genre, moodResult.scores, requestedInstruments);
+      console.log('Recommended Instruments:', recInstruments.map(i => i.name));
+      
+      currentInstruments = recInstruments;
 
-      const { patterns, bpm } = BeatPatternGenerator.generate(instruments, genre, moodResult.scores);
+      const { patterns, bpm } = BeatPatternGenerator.generate(recInstruments, genre, moodResult.scores);
       currentPatterns = patterns;
       currentBpm = bpm;
 
       // Render
       renderMoodTags(moodResult.tags);
-      renderInstruments(instruments);
+      renderInstruments(recInstruments);
       renderSequencer(patterns);
 
       // BPM
@@ -645,6 +724,13 @@ const UIController = (() => {
     document.getElementById('bpm-slider').addEventListener('input', doBpmChange);
     document.getElementById('export-btn').addEventListener('click', doExport);
     document.getElementById('export-midi-btn').addEventListener('click', doExportMidi);
+
+    // Auto-analyze when genre changes (if already analyzed once)
+    genreEl().addEventListener('change', () => {
+      if (!resultsEl().classList.contains('hidden')) {
+        doAnalyze();
+      }
+    });
 
     // Allow Enter in textarea only as newline (not submit)
     lyricsEl().addEventListener('keydown', e => {
